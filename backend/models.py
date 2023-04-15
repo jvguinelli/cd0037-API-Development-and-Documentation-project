@@ -1,11 +1,6 @@
 from sqlalchemy import Column, String, Integer
 from flask_sqlalchemy import SQLAlchemy
 
-database_name = 'trivia'
-database_path = "postgresql://{}:{}@{}/{}".format(
-    "student", "student", "localhost:5432", database_name
-)
-
 db = SQLAlchemy()
 
 """
@@ -14,9 +9,7 @@ setup_db(app)
 """
 
 
-def setup_db(app, database_path=database_path):
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_path
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+def setup_db(app):
     db.app = app
     db.init_app(app)
 
@@ -30,10 +23,10 @@ class Question(db.Model):
     __tablename__ = 'questions'
 
     id = Column(Integer, primary_key=True)
-    question = Column(String)
-    answer = Column(String)
-    category = Column(String)
-    difficulty = Column(Integer)
+    question = Column(String, nullable=False, unique=True)
+    answer = Column(String, nullable=False)
+    category = Column(Integer, db.ForeignKey('categories.id'))
+    difficulty = Column(Integer, nullable=False)
 
     def __init__(self, question, answer, category, difficulty):
         self.question = question
@@ -72,7 +65,7 @@ class Category(db.Model):
     __tablename__ = 'categories'
 
     id = Column(Integer, primary_key=True)
-    type = Column(String)
+    type = Column(String, nullable=False, unique=True)
 
     def __init__(self, type):
         self.type = type

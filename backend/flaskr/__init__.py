@@ -10,6 +10,12 @@ QUESTIONS_PER_PAGE = 10
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
+
+    if test_config:
+        app.config.from_mapping(test_config)
+    else:
+        app.config.from_object('config')
+
     setup_db(app)
 
     """
@@ -36,7 +42,7 @@ def create_app(test_config=None):
     """
     @app.route('/categories', methods=['GET'])
     def categories():
-        categories = Category.query.order_by(Category.type).all()
+        categories = Category.query.all()
 
         categories_dict = {}
         for category in categories:
@@ -72,7 +78,7 @@ def create_app(test_config=None):
         if len(questions_lst) == 0:
             abort(404)
 
-        categories = Category.query.order_by(Category.type).all()
+        categories = Category.query.all()
 
         categories_dict = {}
         for category in categories:
@@ -191,6 +197,7 @@ def create_app(test_config=None):
             abort(404)
 
         return jsonify({
+            "success": True,
             "questions": questions_lst,
             "total_questions": len(questions_lst),
             "current_category": category_id
@@ -217,16 +224,21 @@ def create_app(test_config=None):
         query = Question.query \
                         .filter(Question.id.not_in(previous_questions)) \
 
-        if category['id'] != 0:
-            query = query.filter(Question.category == category['id'])
+        if category and (category != 0):
+            query = query.filter(Question.category == category)
 
-        pos_question = random.randint(0, query.count() - 1)
+        qtd_questions = query.count()
+        pos_question = None
+        if qtd_questions == 0:
+            abort(404)
+        elif qtd_questions == 1:
+            pos_question = 1
+        else:
+            pos_question = random.randint(0, qtd_questions - 1)
 
         question = query.order_by(Question.id) \
                         .offset(pos_question).first()
 
-        if not question:
-            abort(404)
 
         question = question.format()
 
